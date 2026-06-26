@@ -1,0 +1,27 @@
+# Bỏ qua thư mục node_modules của cả Frontend và root
+node_modules/
+frontend/node_modules/
+report-gen/node_modules/
+
+# Bỏ qua thư mục build/target của Backend (Java Spring Boot)
+backend/target/
+backend/.mvn/
+backend/*.jar
+backend/*.war
+
+# Bỏ qua thư mục build của Frontend (ReactJS/Vite)
+frontend/dist/
+frontend/build/
+
+# Bỏ qua các file cấu hình môi trường bảo mật
+.env
+.env.local
+
+# Bỏ qua file cấu hình IDE (VS Code, IntelliJ)
+.vscode/
+.idea/
+*.iml
+
+# Bỏ qua các file rác của hệ điều hành
+.DS_Store
+Thumbs.db
