@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -82,6 +83,38 @@ function App() {
           <ChatBot />
         </Layout>
       </BrowserRouter>
+      <Toaster 
+        position="top-right" 
+        reverseOrder={false} 
+        toastOptions={{
+          style: {
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+            color: '#1f2937',
+            padding: '16px 24px',
+            borderRadius: '16px',
+            fontSize: '15px',
+            fontWeight: '600',
+            letterSpacing: '0.3px',
+            fontFamily: '"Inter", sans-serif',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#ffffff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#ffffff',
+            },
+          },
+        }}
+      />
     </CartProvider>
   );
 }
