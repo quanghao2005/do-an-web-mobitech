@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "../context/CartContext";
 import { useNavigate, useLocation } from "react-router-dom"; // THÊM useLocation
 import axios from "axios";
+
+import SearchableSelect from '../components/SearchableSelect';
 
 export default function Checkout() {
   const { cartItems, clearCart } = useCart();
@@ -22,10 +24,8 @@ export default function Checkout() {
   const [showQR, setShowQR] = useState(false);
 
   const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
   const [selectedProvince, setSelectedProvince] = useState("");
-  const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedWard, setSelectedWard] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
 
@@ -40,12 +40,50 @@ export default function Checkout() {
   });
 
   useEffect(() => {
-    axios.get("https://provinces.open-api.vn/api/p/").then((res) => setProvinces(res.data));
+    const savedAddress = localStorage.getItem("address");
+
+    axios.get("/addresses.json").then((res) => {
+      setProvinces(res.data.provinces);
+      
+      if (savedAddress && savedAddress !== "Chưa cập nhật") {
+        const parts = savedAddress.split(", "); 
+        if (parts.length >= 3) {
+          setDetailAddress(parts[0]);
+          const province = res.data.provinces.find(p => p.name === parts[2]);
+          if (province) {
+            setSelectedProvince(province.code);
+            if (province.code === "72") {
+              setWards(res.data.wards);
+              const ward = res.data.wards.find(w => w.name === parts[1]);
+              if (ward) setSelectedWard(ward.code);
+            } else {
+              axios.get(`https://provinces.open-api.vn/api/p/${province.code}?depth=3`)
+                .then(resDist => {
+                  const allWards = [];
+                  if (resDist.data.districts) {
+                    resDist.data.districts.forEach(d => {
+                      if (d.wards) allWards.push(...d.wards);
+                    });
+                  }
+                  setWards(allWards);
+                  const ward = allWards.find(w => w.name === parts[1]);
+                  if (ward) setSelectedWard(ward.code);
+                });
+            }
+          }
+        }
+      }
+    });
 
     axios.get("http://localhost:8080/api/settings")
       .then(res => {
         const data = res.data;
-        const info = { ...bankInfo };
+        const info = {
+          BANK_NAME: "Vietcombank",
+          BANK_ACC: "123456789",
+          BANK_OWNER: "MOBITECH STORE",
+          MOMO_ACC: "0987654321"
+        };
         data.forEach(item => {
            if (item.keyName === 'BANK_NAME') info.BANK_NAME = item.valueContent;
            if (item.keyName === 'BANK_ACC') info.BANK_ACC = item.valueContent;
@@ -60,29 +98,35 @@ export default function Checkout() {
   const handleProvinceChange = (e) => {
     const pCode = e.target.value;
     setSelectedProvince(pCode);
-    setSelectedDistrict("");
     setSelectedWard("");
-    setDistricts([]);
     setWards([]);
     if (pCode) {
-      axios.get(`https://provinces.open-api.vn/api/p/${pCode}?depth=2`).then((res) => setDistricts(res.data.districts));
-    }
-  };
-
-  const handleDistrictChange = (e) => {
-    const dCode = e.target.value;
-    setSelectedDistrict(dCode);
-    setSelectedWard("");
-    setWards([]);
-    if (dCode) {
-      axios.get(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`).then((res) => setWards(res.data.wards));
+      if (pCode === "72") {
+        axios.get("/addresses.json").then((res) => {
+          setWards(res.data.wards);
+        });
+      } else {
+        axios.get(`https://provinces.open-api.vn/api/p/${pCode}?depth=3`).then((res) => {
+          const allWards = [];
+          if (res.data.districts) {
+            res.data.districts.forEach(d => {
+              if (d.wards) {
+                allWards.push(...d.wards);
+              }
+            });
+          }
+          setWards(allWards);
+        }).catch(() => {
+          setWards([]);
+        });
+      }
     }
   };
 
   const handlePaymentInitiate = (e) => {
     e.preventDefault();
 
-    if (!form.fullname || !form.phone || !form.email || !selectedProvince || !selectedDistrict || !selectedWard || !detailAddress) {
+    if (!form.fullname || !form.phone || !form.email || !selectedProvince || !selectedWard || !detailAddress) {
       alert("Vui lòng nhập đầy đủ thông tin (kể cả Email) và địa chỉ giao hàng!");
       return;
     }
@@ -102,9 +146,8 @@ export default function Checkout() {
   const executeSubmitOrder = async () => {
 
     const pName = provinces.find((p) => p.code == selectedProvince)?.name || "";
-    const dName = districts.find((d) => d.code == selectedDistrict)?.name || "";
     const wName = wards.find((w) => w.code == selectedWard)?.name || "";
-    const fullAddress = `${detailAddress}, ${wName}, ${dName}, ${pName}`;
+    const fullAddress = `${detailAddress}, ${wName}, ${pName}`;
 
     const user = JSON.parse(localStorage.getItem("user"));
 
@@ -160,19 +203,22 @@ export default function Checkout() {
               </div>
               <input type="email" required value={form.email} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 font-bold italic" placeholder="Email nhận hóa đơn" onChange={(e) => setForm({ ...form, email: e.target.value })} />
 
-              <div className="grid grid-cols-3 gap-3">
-                <select className="bg-slate-50 border-none rounded-xl py-4 px-3 text-[10px] font-black uppercase outline-none italic" value={selectedProvince} onChange={handleProvinceChange} required>
-                  <option value="">Tỉnh/Thành</option>
-                  {provinces.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
-                </select>
-                <select className="bg-slate-50 border-none rounded-xl py-4 px-3 text-[10px] font-black uppercase outline-none italic" value={selectedDistrict} onChange={handleDistrictChange} disabled={!selectedProvince} required>
-                  <option value="">Quận/Huyện</option>
-                  {districts.map((d) => <option key={d.code} value={d.code}>{d.name}</option>)}
-                </select>
-                <select className="bg-slate-50 border-none rounded-xl py-4 px-3 text-[10px] font-black uppercase outline-none italic" value={selectedWard} onChange={(e) => setSelectedWard(e.target.value)} disabled={!selectedDistrict} required>
-                  <option value="">Phường/Xã</option>
-                  {wards.map((w) => <option key={w.code} value={w.code}>{w.name}</option>)}
-                </select>
+              <div className="grid grid-cols-2 gap-4 p-5 border border-slate-200 rounded-[1.5rem] bg-white shadow-sm mb-4">
+                <SearchableSelect 
+                  label="Tỉnh/Thành" 
+                  options={provinces} 
+                  value={selectedProvince} 
+                  onChange={(code) => handleProvinceChange({ target: { value: code } })} 
+                  placeholder="-- Chọn tỉnh / TP --" 
+                />
+                <SearchableSelect 
+                  label="Phường/Xã" 
+                  options={wards} 
+                  value={selectedWard} 
+                  onChange={(code) => setSelectedWard(code)} 
+                  placeholder="-- Chọn phường / xã --" 
+                  disabled={!selectedProvince} 
+                />
               </div>
               <input required value={detailAddress} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 font-bold italic" placeholder="Số nhà, tên đường..." onChange={(e) => setDetailAddress(e.target.value)} />
             </div>

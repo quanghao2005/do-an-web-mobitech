@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 export default function Blog() {
   const [posts, setPosts] = useState([]);
   const [topics, setTopics] = useState([]);
+  const [promotions, setPromotions] = useState([]);
   const [activeTopic, setActiveTopic] = useState("all");
 
   useEffect(() => {
@@ -15,9 +16,33 @@ export default function Blog() {
     axios.get("http://localhost:8080/api/posts")
       .then(res => setPosts(res.data))
       .catch(err => console.error(err));
+      
+    axios.get("http://localhost:8080/api/promotions")
+      .then(res => setPromotions(res.data))
+      .catch(err => console.error(err));
   }, []);
 
-  const filteredPosts = activeTopic === "all" ? posts : posts.filter(p => p.topic && p.topic.id === activeTopic);
+  const filteredPosts = posts.filter(post => {
+    // 1. Lọc theo Topic
+    if (activeTopic !== "all" && (!post.topic || post.topic.id !== activeTopic)) return false;
+
+    // 2. Lọc ẩn bài viết có mã voucher đã HẾT HẠN
+    if (post.content && promotions.length > 0) {
+      const regex = /\[VOUCHER:\s*([A-Za-z0-9]+)\]/g;
+      let match;
+      while ((match = regex.exec(post.content)) !== null) {
+        const code = match[1];
+        const promo = promotions.find(p => p.code === code);
+        if (promo) {
+          // Kiểm tra xem promo có hết hạn, hết lượt hoặc bị tắt không
+          if (new Date(promo.endDate) < new Date() || promo.status === 0 || promo.usedCount >= promo.usageLimit) {
+            return false; // Ẩn luôn bài viết
+          }
+        }
+      }
+    }
+    return true;
+  });
 
   return (
     <div className="bg-gradient-to-b from-slate-50 to-slate-100 min-h-screen py-20 animate-fadeIn font-sans selection:bg-blue-200">

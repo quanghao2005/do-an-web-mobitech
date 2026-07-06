@@ -15,7 +15,10 @@ export default function OrderHistory() {
     try {
       // Đảm bảo URL này khớp với OrderController: @GetMapping("/user/{userId}")
       const res = await axios.get(`http://localhost:8080/api/orders/user/${user.id}`);
-      setOrders(res.data);
+      
+      // Sắp xếp đơn hàng mới nhất lên đầu (theo ID giảm dần)
+      const sortedOrders = (res.data || []).sort((a, b) => b.id - a.id);
+      setOrders(sortedOrders);
     } catch (err) {
       console.error("Lỗi tải lịch sử đơn hàng", err);
     }

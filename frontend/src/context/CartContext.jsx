@@ -93,8 +93,13 @@ export const CartProvider = ({ children }) => {
     ));
   };
 
+  // Thêm hàm clearCart để xóa giỏ hàng sau khi thanh toán
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   );

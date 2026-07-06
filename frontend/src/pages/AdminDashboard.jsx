@@ -14,10 +14,11 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function AdminDashboard() {
-  // Lưu trữ toàn bộ dữ liệu gốc từ DB
   const [allRawOrders, setAllRawOrders] = useState([]);
   const [allRawImports, setAllRawImports] = useState([]); // THÊM STATE LƯU PHIẾU NHẬP
   const [totalStock, setTotalStock] = useState(0); // THÊM STATE LƯU TỔNG KHO
+  const [allProducts, setAllProducts] = useState([]); // THÊM STATE LƯU SẢN PHẨM
+  const [showStockModal, setShowStockModal] = useState(false); // STATE HIỂN THỊ POPUP
   const [loading, setLoading] = useState(true);
   
   // Bộ lọc thời gian (Mặc định là 7 ngày qua)
@@ -55,6 +56,7 @@ export default function AdminDashboard() {
 
       // Xử lý dữ liệu Kho (Cộng dồn tất cả stock của sản phẩm)
       const products = Array.isArray(resProducts.data) ? resProducts.data : [];
+      setAllProducts(products);
       const stock = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
       setTotalStock(stock);
 
@@ -138,6 +140,34 @@ export default function AdminDashboard() {
         else if (date > 14 && date <= 21) week = 'Tuần 3';
         else if (date > 21) week = 'Tuần 4';
         dailyRevenueMap[week] += (Number(order.total) || 0);
+      });
+
+    } else if (timeRange === 'quarter') {
+      const currentMonth = now.getMonth();
+      const currentQuarter = Math.floor(currentMonth / 3);
+      const currentYear = now.getFullYear();
+      
+      if (currentQuarter === 0) labels = ['Tháng 1', 'Tháng 2', 'Tháng 3'];
+      else if (currentQuarter === 1) labels = ['Tháng 4', 'Tháng 5', 'Tháng 6'];
+      else if (currentQuarter === 2) labels = ['Tháng 7', 'Tháng 8', 'Tháng 9'];
+      else if (currentQuarter === 3) labels = ['Tháng 10', 'Tháng 11', 'Tháng 12'];
+
+      labels.forEach(l => dailyRevenueMap[l] = 0);
+      
+      filteredOrders = validOrders.filter(o => {
+        const d = new Date(o.createdAt);
+        const q = Math.floor(d.getMonth() / 3);
+        return q === currentQuarter && d.getFullYear() === currentYear;
+      });
+      filteredImports = allRawImports.filter(i => {
+        const d = new Date(i.importDate);
+        const q = Math.floor(d.getMonth() / 3);
+        return q === currentQuarter && d.getFullYear() === currentYear;
+      });
+      filteredOrders.forEach(order => {
+        const m = new Date(order.createdAt).getMonth();
+        const mStr = `Tháng ${m + 1}`;
+        if(dailyRevenueMap[mStr] !== undefined) dailyRevenueMap[mStr] += (Number(order.total) || 0);
       });
 
     } else if (timeRange === 'year') {
@@ -227,6 +257,7 @@ export default function AdminDashboard() {
                 <option value="today">Hôm nay</option>
                 <option value="7days">7 Ngày qua</option>
                 <option value="month">Tháng này</option>
+                <option value="quarter">Quý này</option>
                 <option value="year">Năm nay</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-blue-600">
@@ -276,11 +307,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* THẺ KHO HÀNG */}
-        <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-50 flex flex-col justify-center items-center text-center group hover:bg-orange-500 transition-all duration-500 italic">
+        <div onClick={() => setShowStockModal(true)} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-50 flex flex-col justify-center items-center text-center group hover:bg-orange-500 transition-all duration-500 italic cursor-pointer">
             <div className="w-16 h-16 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl mb-4 shadow-inner group-hover:bg-white group-hover:text-orange-600 transition-colors">🏪</div>
             <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] group-hover:text-orange-100">Tổng sản phẩm kho</span>
             <h3 className="text-4xl xl:text-5xl font-black text-slate-900 mt-2 tracking-tighter group-hover:text-white italic">{totalStock.toLocaleString()}</h3>
-            <p className="text-[8px] text-white font-black mt-4 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity italic">SẴN SÀNG KINH DOANH</p>
+            <p className="text-[8px] text-white font-black mt-4 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity italic">XEM CHI TIẾT KHO TỪNG HÃNG</p>
         </div>
       </div>
 
@@ -354,6 +385,66 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {/* POPUP CHI TIẾT SẢN PHẨM TRONG KHO */}
+      {showStockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md p-8 relative animate-fadeIn">
+            <button 
+              onClick={() => setShowStockModal(false)}
+              className="absolute top-6 right-6 w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center hover:bg-red-100 hover:text-red-500 transition-colors font-black"
+            >
+              ✕
+            </button>
+            <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter italic mb-2">Chi tiết kho hàng</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic mb-6">Số lượng tồn kho theo từng hãng</p>
+            
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar pb-10">
+              {(() => {
+                const brandMap = {};
+                allProducts.forEach(p => {
+                  const name = (p.name || '').toLowerCase();
+                  let brand = "Khác";
+                  if (name.includes("iphone") || name.includes("apple")) brand = "Apple (iPhone)";
+                  else if (name.includes("samsung") || name.includes("galaxy")) brand = "Samsung";
+                  else if (name.includes("oppo")) brand = "OPPO";
+                  else if (name.includes("xiaomi") || name.includes("redmi") || name.includes("poco")) brand = "Xiaomi";
+                  else if (name.includes("nokia")) brand = "Nokia";
+                  else if (name.includes("vivo")) brand = "Vivo";
+                  else if (name.includes("realme")) brand = "Realme";
+                  
+                  if (!brandMap[brand]) {
+                    brandMap[brand] = { total: 0, products: [] };
+                  }
+                  brandMap[brand].total += (Number(p.stock) || 0);
+                  brandMap[brand].products.push({ name: p.name, stock: p.stock });
+                });
+                
+                return Object.entries(brandMap)
+                  .sort((a, b) => b[1].total - a[1].total)
+                  .map(([brand, data]) => (
+                    <div key={brand} className="group relative flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer">
+                      <span className="font-black text-slate-700 italic">{brand}</span>
+                      <span className="font-black text-blue-600 bg-blue-50 px-4 py-1.5 rounded-xl">{data.total.toLocaleString()}</span>
+                      
+                      {/* TOOLTIP HIỂN THỊ CHI TIẾT KHI LIA CHUỘT */}
+                      <div className="absolute left-0 top-full mt-2 w-full bg-white border border-slate-200 shadow-2xl rounded-xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 max-h-48 overflow-y-auto custom-scrollbar">
+                        <ul className="space-y-2">
+                          {data.products.map((prod, idx) => (
+                             <li key={idx} className="flex justify-between items-center text-xs border-b border-slate-50 pb-1 last:border-0 last:pb-0">
+                               <span className="text-slate-600 font-bold truncate pr-4">{prod.name}</span>
+                               <span className="text-blue-500 font-black bg-blue-50 px-2 py-0.5 rounded-md">{prod.stock}</span>
+                             </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ));
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

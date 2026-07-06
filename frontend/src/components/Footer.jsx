@@ -4,8 +4,8 @@ import axios from 'axios';
 export default function Footer() {
   const [storeInfo, setStoreInfo] = useState({
     STORE_PHONE: "1900 6688",
-    STORE_EMAIL: "support@mobitech.vn",
-    STORE_ADDRESS: "Cần Thơ, Việt Nam",
+    STORE_EMAIL: "hao@mobitech.vn",
+    STORE_ADDRESS: "Đồng Nai, Việt Nam",
     STORE_FB: "#"
   });
 

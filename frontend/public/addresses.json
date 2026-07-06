@@ -1,0 +1,526 @@
+{
+  "provinces": [
+    {
+      "code": "01",
+      "name": "Hà Nội"
+    },
+    {
+      "code": "04",
+      "name": "Cao Bằng"
+    },
+    {
+      "code": "08",
+      "name": "Tuyên Quang"
+    },
+    {
+      "code": "10",
+      "name": "Lào Cai"
+    },
+    {
+      "code": "11",
+      "name": "Điện Biên"
+    },
+    {
+      "code": "12",
+      "name": "Lai Châu"
+    },
+    {
+      "code": "14",
+      "name": "Sơn La"
+    },
+    {
+      "code": "19",
+      "name": "Thái Nguyên"
+    },
+    {
+      "code": "20",
+      "name": "Lạng Sơn"
+    },
+    {
+      "code": "22",
+      "name": "Quảng Ninh"
+    },
+    {
+      "code": "25",
+      "name": "Phú Thọ"
+    },
+    {
+      "code": "27",
+      "name": "Bắc Ninh"
+    },
+    {
+      "code": "31",
+      "name": "Hải Phòng"
+    },
+    {
+      "code": "33",
+      "name": "Hưng Yên"
+    },
+    {
+      "code": "37",
+      "name": "Ninh Bình"
+    },
+    {
+      "code": "38",
+      "name": "Thanh Hóa"
+    },
+    {
+      "code": "40",
+      "name": "Nghệ An"
+    },
+    {
+      "code": "42",
+      "name": "Hà Tĩnh"
+    },
+    {
+      "code": "45",
+      "name": "Quảng Trị"
+    },
+    {
+      "code": "46",
+      "name": "Huế"
+    },
+    {
+      "code": "48",
+      "name": "Đà Nẵng"
+    },
+    {
+      "code": "51",
+      "name": "Quảng Ngãi"
+    },
+    {
+      "code": "56",
+      "name": "Khánh Hòa"
+    },
+    {
+      "code": "64",
+      "name": "Gia Lai"
+    },
+    {
+      "code": "66",
+      "name": "Đắk Lắk"
+    },
+    {
+      "code": "68",
+      "name": "Lâm Đồng"
+    },
+    {
+      "code": "72",
+      "name": "Tây Ninh"
+    },
+    {
+      "code": "75",
+      "name": "Đồng Nai"
+    },
+    {
+      "code": "79",
+      "name": "Hồ Chí Minh"
+    },
+    {
+      "code": "86",
+      "name": "Vĩnh Long"
+    },
+    {
+      "code": "87",
+      "name": "Đồng Tháp"
+    },
+    {
+      "code": "89",
+      "name": "An Giang"
+    },
+    {
+      "code": "92",
+      "name": "Cần Thơ"
+    },
+    {
+      "code": "96",
+      "name": "Cà Mau"
+    }
+  ],
+  "wards": [
+    {
+      "code": "1291",
+      "name": "Long An (Phường)"
+    },
+    {
+      "code": "1292",
+      "name": "Tân An (Phường)"
+    },
+    {
+      "code": "1293",
+      "name": "Khánh Hậu (Phường)"
+    },
+    {
+      "code": "1294",
+      "name": "Tân Hưng (Xã)"
+    },
+    {
+      "code": "1295",
+      "name": "Hưng Điền (Xã)"
+    },
+    {
+      "code": "1296",
+      "name": "Vĩnh Thạnh (Xã)"
+    },
+    {
+      "code": "1297",
+      "name": "Vĩnh Châu (Xã)"
+    },
+    {
+      "code": "1298",
+      "name": "Vĩnh Hưng (Xã)"
+    },
+    {
+      "code": "1299",
+      "name": "Khánh Hưng (Xã)"
+    },
+    {
+      "code": "1300",
+      "name": "Tuyên Bình (Xã)"
+    },
+    {
+      "code": "1301",
+      "name": "Kiến Tường (Phường)"
+    },
+    {
+      "code": "1302",
+      "name": "Bình Hiệp (Xã)"
+    },
+    {
+      "code": "1303",
+      "name": "Tuyên Thạnh (Xã)"
+    },
+    {
+      "code": "1304",
+      "name": "Bình Hòa (Xã)"
+    },
+    {
+      "code": "1305",
+      "name": "Mộc Hóa (Xã)"
+    },
+    {
+      "code": "1306",
+      "name": "Thạnh Hóa (Xã)"
+    },
+    {
+      "code": "1307",
+      "name": "Thuận Mỹ (Xã)"
+    },
+    {
+      "code": "1308",
+      "name": "Cần Đước (Xã)"
+    },
+    {
+      "code": "1322",
+      "name": "Tân Thạnh (Xã)"
+    },
+    {
+      "code": "1323",
+      "name": "Thạnh Lợi (Xã)"
+    },
+    {
+      "code": "1324",
+      "name": "Lương Hòa (Xã)"
+    },
+    {
+      "code": "1325",
+      "name": "Bình Đức (Xã)"
+    },
+    {
+      "code": "1326",
+      "name": "Mỹ Yên (Xã)"
+    },
+    {
+      "code": "1327",
+      "name": "Thủ Thừa (Xã)"
+    },
+    {
+      "code": "1328",
+      "name": "Tân Long (Xã)"
+    },
+    {
+      "code": "1329",
+      "name": "Mỹ Thạnh (Xã)"
+    },
+    {
+      "code": "1330",
+      "name": "Mỹ An (Xã)"
+    },
+    {
+      "code": "1331",
+      "name": "Nhựt Tảo (Xã)"
+    },
+    {
+      "code": "1332",
+      "name": "Nhơn Hòa Lập (Xã)"
+    },
+    {
+      "code": "1333",
+      "name": "Vàm Cỏ (Xã)"
+    },
+    {
+      "code": "1334",
+      "name": "Rạch Kiến (Xã)"
+    },
+    {
+      "code": "1335",
+      "name": "Long Cang (Xã)"
+    },
+    {
+      "code": "1336",
+      "name": "Mỹ Lệ (Xã)"
+    },
+    {
+      "code": "1337",
+      "name": "Tân Lân (Xã)"
+    },
+    {
+      "code": "1338",
+      "name": "Long Hựu (Xã)"
+    },
+    {
+      "code": "1339",
+      "name": "Cần Giuộc (Xã)"
+    },
+    {
+      "code": "1340",
+      "name": "Phước Lý (Xã)"
+    },
+    {
+      "code": "1341",
+      "name": "Mỹ Lộc (Xã)"
+    },
+    {
+      "code": "1342",
+      "name": "Phước Vĩnh Tây (Xã)"
+    },
+    {
+      "code": "1343",
+      "name": "Hậu Thạnh (Xã)"
+    },
+    {
+      "code": "1344",
+      "name": "Nhơn Ninh (Xã)"
+    },
+    {
+      "code": "1345",
+      "name": "Bình Thành (Xã)"
+    },
+    {
+      "code": "1346",
+      "name": "Thạnh Phước (Xã)"
+    },
+    {
+      "code": "1347",
+      "name": "Tân Tây (Xã)"
+    },
+    {
+      "code": "1348",
+      "name": "Đông Thành (Xã)"
+    },
+    {
+      "code": "1349",
+      "name": "Mỹ Quý (Xã)"
+    },
+    {
+      "code": "1350",
+      "name": "Đức Huệ (Xã)"
+    },
+    {
+      "code": "1351",
+      "name": "Hậu Nghĩa (Xã)"
+    },
+    {
+      "code": "1352",
+      "name": "Đức Hòa (Xã)"
+    },
+    {
+      "code": "1353",
+      "name": "An Ninh (Xã)"
+    },
+    {
+      "code": "1354",
+      "name": "Hiệp Hòa (Xã)"
+    },
+    {
+      "code": "1355",
+      "name": "Tân Tập (Xã)"
+    },
+    {
+      "code": "1356",
+      "name": "Tầm Vu (Xã)"
+    },
+    {
+      "code": "1357",
+      "name": "Vĩnh Công (Xã)"
+    },
+    {
+      "code": "1358",
+      "name": "An Lục Long (Xã)"
+    },
+    {
+      "code": "1359",
+      "name": "Tân Trụ (Xã)"
+    },
+    {
+      "code": "1360",
+      "name": "Đức Lập (Xã)"
+    },
+    {
+      "code": "1361",
+      "name": "Hòa Khánh (Xã)"
+    },
+    {
+      "code": "1362",
+      "name": "Mỹ Hạnh (Xã)"
+    },
+    {
+      "code": "1363",
+      "name": "Bến Lức (Xã)"
+    },
+    {
+      "code": "2745",
+      "name": "Phước Chỉ (Xã)"
+    },
+    {
+      "code": "2746",
+      "name": "Trảng Bàng (Phường)"
+    },
+    {
+      "code": "2747",
+      "name": "An Tịnh (Phường)"
+    },
+    {
+      "code": "2748",
+      "name": "Gò Dầu (Phường)"
+    },
+    {
+      "code": "2749",
+      "name": "Bến Cầu (Xã)"
+    },
+    {
+      "code": "2750",
+      "name": "Gia Lộc (Phường)"
+    },
+    {
+      "code": "2751",
+      "name": "Long Thuận (Xã)"
+    },
+    {
+      "code": "2752",
+      "name": "Phước Thạnh (Xã)"
+    },
+    {
+      "code": "2753",
+      "name": "Long Chữ (Xã)"
+    },
+    {
+      "code": "2754",
+      "name": "Hưng Thuận (Xã)"
+    },
+    {
+      "code": "2755",
+      "name": "Hòa Thành (Phường)"
+    },
+    {
+      "code": "2756",
+      "name": "Truông Mít (Xã)"
+    },
+    {
+      "code": "2757",
+      "name": "Thạnh Đức (Xã)"
+    },
+    {
+      "code": "2758",
+      "name": "Ninh Điền (Xã)"
+    },
+    {
+      "code": "2759",
+      "name": "Lộc Ninh (Xã)"
+    },
+    {
+      "code": "2760",
+      "name": "Cầu Khởi (Xã)"
+    },
+    {
+      "code": "2761",
+      "name": "Thanh Điền (Phường)"
+    },
+    {
+      "code": "2762",
+      "name": "Long Hoa (Phường)"
+    },
+    {
+      "code": "2763",
+      "name": "Tân Ninh (Phường)"
+    },
+    {
+      "code": "2764",
+      "name": "Châu Thành (Xã)"
+    },
+    {
+      "code": "2765",
+      "name": "Hòa Hội (Xã)"
+    },
+    {
+      "code": "2766",
+      "name": "Ninh Thạnh (Phường)"
+    },
+    {
+      "code": "2767",
+      "name": "Hảo Đước (Xã)"
+    },
+    {
+      "code": "2768",
+      "name": "Bình Minh (Phường)"
+    },
+    {
+      "code": "2769",
+      "name": "Dương Minh Châu (Xã)"
+    },
+    {
+      "code": "2770",
+      "name": "Phước Vinh (Xã)"
+    },
+    {
+      "code": "2771",
+      "name": "Trà Vong (Xã)"
+    },
+    {
+      "code": "2772",
+      "name": "Tân Phú (Xã)"
+    },
+    {
+      "code": "2773",
+      "name": "Tân Thành (Xã)"
+    },
+    {
+      "code": "2774",
+      "name": "Tân Biên (Xã)"
+    },
+    {
+      "code": "2775",
+      "name": "Tân Châu (Xã)"
+    },
+    {
+      "code": "2776",
+      "name": "Thạnh Bình (Xã)"
+    },
+    {
+      "code": "2777",
+      "name": "Tân Hòa (Xã)"
+    },
+    {
+      "code": "2778",
+      "name": "Tân Hội (Xã)"
+    },
+    {
+      "code": "2779",
+      "name": "Tân Đông (Xã)"
+    },
+    {
+      "code": "2780",
+      "name": "Tân Lập (Xã)"
+    }
+  ]
+}

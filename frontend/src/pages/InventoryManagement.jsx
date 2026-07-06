@@ -3,10 +3,12 @@ import axios from 'axios';
 
 export default function InventoryManagement() {
   const [products, setProducts] = useState([]);
+  const [importHistory, setImportHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // State cho Modal nhập kho
+  // State cho Modal nhập kho và Modal lịch sử
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [addQuantity, setAddQuantity] = useState("");
   const [importPrice, setImportPrice] = useState("");
@@ -18,8 +20,13 @@ export default function InventoryManagement() {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:8080/api/products");
-      setProducts(res.data);
+      const [resProducts, resImports] = await Promise.all([
+        axios.get("http://localhost:8080/api/products"),
+        axios.get("http://localhost:8080/api/imports")
+      ]);
+      setProducts(resProducts.data);
+      // Sắp xếp lịch sử nhập kho mới nhất lên đầu
+      setImportHistory(resImports.data.sort((a, b) => new Date(b.importDate) - new Date(a.importDate)));
     } catch (err) {
       console.error("Lỗi lấy dữ liệu kho:", err);
     } finally {
@@ -68,9 +75,17 @@ export default function InventoryManagement() {
 
   return (
     <div className="animate-fadeIn p-4 bg-[#f8f9fa] min-h-screen font-sans italic">
-      <div className="mb-10 px-4">
-        <h2 className="text-4xl font-black text-slate-800 tracking-tighter uppercase italic">Quản lý Kho hàng</h2>
-        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-2 italic">Kiểm soát tồn kho thời gian thực</p>
+      <div className="mb-10 px-4 flex justify-between items-center">
+        <div>
+          <h2 className="text-4xl font-black text-slate-800 tracking-tighter uppercase italic">Quản lý Kho hàng</h2>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-2 italic">Kiểm soát tồn kho thời gian thực</p>
+        </div>
+        <button 
+          onClick={() => setIsHistoryModalOpen(true)}
+          className="bg-blue-600 text-white px-8 py-4 rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-slate-900 transition-all italic flex items-center gap-2"
+        >
+          <span className="text-lg">🕒</span> Lịch sử nhập kho
+        </button>
       </div>
 
       {/* THẺ THỐNG KÊ KHO */}
@@ -144,6 +159,70 @@ export default function InventoryManagement() {
           </table>
         </div>
       </div>
+
+      {/* LỊCH SỬ NHẬP KHO (MODAL) */}
+      {isHistoryModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4">
+          <div className="bg-white w-full max-w-4xl p-10 rounded-[3rem] shadow-2xl animate-slideUp italic relative">
+            <button 
+              onClick={() => setIsHistoryModalOpen(false)} 
+              className="absolute top-8 right-8 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-500 hover:bg-red-500 hover:text-white transition-all z-10"
+            >
+              ✕
+            </button>
+            
+            <style>{`
+              .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+              .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            `}</style>
+            
+            <div className="flex justify-between items-center mb-10 italic pr-16">
+                <h3 className="text-2xl md:text-3xl font-black text-slate-800 uppercase tracking-tighter flex items-center gap-4">
+                   <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
+                   Lịch sử nhập kho
+                </h3>
+                <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-5 py-2.5 rounded-2xl uppercase tracking-widest shadow-sm">
+                    {importHistory.length} Giao dịch nhập
+                </span>
+            </div>
+
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
+              {importHistory.map((receipt) => (
+                <div key={receipt.id} className="flex items-center justify-between p-6 bg-slate-50/50 rounded-[2.5rem] border border-transparent hover:border-blue-200 hover:bg-white hover:shadow-xl transition-all duration-500 group">
+                  <div className="flex items-center gap-6">
+                    <img src={receipt.product?.imageUrl} alt="img" className="w-14 h-14 object-contain bg-white rounded-xl border border-slate-100 p-1" />
+                    <div>
+                      <p className="font-black text-slate-800 uppercase text-sm tracking-tight italic">{receipt.product?.name}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">
+                        Phiếu #{receipt.id} <span className="mx-2 opacity-30">|</span> {new Date(receipt.importDate).toLocaleDateString('vi-VN')} {new Date(receipt.importDate).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-10 italic">
+                    <div className="hidden md:block">
+                      <p className="font-black text-xl text-slate-800 italic">
+                        +{receipt.quantity} <span className="text-xs text-slate-400">máy</span>
+                      </p>
+                      <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                        Giá nhập: {receipt.importPrice?.toLocaleString()}đ
+                      </p>
+                    </div>
+                    <div className="w-32 text-right">
+                       <p className="font-black text-xl text-red-500 italic">
+                        -{receipt.totalPrice?.toLocaleString()}đ
+                      </p>
+                      <p className="text-[9px] font-black text-red-400 mt-1 uppercase tracking-widest bg-red-50 rounded-lg py-1 px-2 inline-block">Tổng vốn</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {importHistory.length === 0 && (
+                <div className="text-center py-20 text-slate-300 font-bold uppercase text-xs italic">Chưa có lịch sử nhập kho</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL NHẬP KHO */}
       {isModalOpen && (

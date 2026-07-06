@@ -12,9 +12,10 @@ import 'swiper/css/navigation';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [banners, setBanners] = useState([]);
-  const [selectedCate, setSelectedCate] = useState("all");
+  const [selectedBrand, setSelectedBrand] = useState("all");
+  const [maxPrice, setMaxPrice] = useState(50000000);
   const [loading, setLoading] = useState(true);
 
   const { search } = useLocation();
@@ -25,14 +26,14 @@ export default function Home() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [resProd, resCate, resBanner] = await Promise.all([
+        const [resProd, resBrand, resBanner] = await Promise.all([
           axios.get("http://localhost:8080/api/products/active"),
-          axios.get("http://localhost:8080/api/categories"),
+          axios.get("http://localhost:8080/api/brands"),
           axios.get("http://localhost:8080/api/banners").catch(() => ({ data: [] }))
         ]);
 
         setProducts(resProd.data);
-        setCategories(resCate.data);
+        setBrands(resBrand.data);
         
         if (resBanner.data.length > 0) {
           setBanners(resBanner.data);
@@ -53,8 +54,20 @@ export default function Home() {
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCate = selectedCate === "all" || p.category?.id.toString() === selectedCate;
-    return matchesSearch && matchesCate;
+    
+    // Tìm thương hiệu đang được chọn
+    const targetBrand = brands.find(b => b.id.toString() === selectedBrand);
+    
+    // Logic Lọc:
+    // 1. Trùng ID thương hiệu (cho các SP mới đã gắn Thương hiệu)
+    // 2. Nếu SP chưa gắn Thương hiệu, fallback so khớp Tên Danh Mục = Tên Thương Hiệu (do dữ liệu cũ bị trùng)
+    const matchesBrand = selectedBrand === "all" || 
+                         (p.brand && p.brand.id.toString() === selectedBrand) || 
+                         (!p.brand && p.category && targetBrand && p.category.name.toUpperCase() === targetBrand.name.toUpperCase());
+                         
+    const matchesPrice = p.price <= maxPrice;
+    
+    return matchesSearch && matchesBrand && matchesPrice;
   });
 
   if (loading) {
@@ -104,8 +117,9 @@ export default function Home() {
         </Swiper>
       </div>
 
-      {/* 2. THƯƠNG HIỆU */}
-      <div className="max-w-7xl mx-auto px-8 mb-16">
+      {/* 2. BỘ LỌC ĐA TẦNG (HÃNG & GIÁ) */}
+      <div className="max-w-7xl mx-auto px-8 mb-16 space-y-6">
+        {/* Bộ lọc Hãng */}
         <div className="bg-white/70 backdrop-blur-xl p-5 rounded-[3rem] shadow-sm flex flex-col md:flex-row justify-between items-center border border-white/50 gap-6 italic">
           <div className="flex items-center gap-3 ml-4">
               <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
@@ -113,24 +127,54 @@ export default function Home() {
           </div>
           <div className="flex gap-3 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
             <button 
-              onClick={() => setSelectedCate("all")}
+              onClick={() => setSelectedBrand("all")}
               className={`px-10 py-4 rounded-2xl font-black text-[11px] uppercase transition-all whitespace-nowrap shadow-sm italic ${
-                selectedCate === "all" ? 'bg-slate-900 text-white shadow-xl shadow-slate-200' : 'bg-white text-slate-400 hover:bg-slate-50'
+                selectedBrand === "all" ? 'bg-slate-900 text-white shadow-xl shadow-slate-200' : 'bg-white text-slate-400 hover:bg-slate-50'
               }`}
             >
               Tất cả
             </button>
-            {categories.map(cat => (
+            {brands.map(brand => (
               <button 
-                key={cat.id}
-                onClick={() => setSelectedCate(cat.id.toString())}
-                className={`px-10 py-4 rounded-2xl font-black text-[11px] uppercase transition-all whitespace-nowrap shadow-sm italic ${
-                  selectedCate === cat.id.toString() ? 'bg-blue-600 text-white shadow-xl shadow-blue-100' : 'bg-white text-slate-400 hover:bg-slate-50'
+                key={brand.id}
+                onClick={() => setSelectedBrand(brand.id.toString())}
+                className={`px-8 py-3 rounded-2xl font-black text-[11px] uppercase transition-all whitespace-nowrap shadow-sm italic flex items-center gap-3 ${
+                  selectedBrand === brand.id.toString() ? 'bg-blue-600 text-white shadow-xl shadow-blue-100' : 'bg-white text-slate-500 hover:bg-slate-50'
                 }`}
               >
-                {cat.name}
+                {brand.logoUrl && (
+                  <img 
+                    src={brand.logoUrl} 
+                    alt={brand.name} 
+                    className="w-6 h-6 object-contain"
+                  />
+                )}
+                {brand.name}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Bộ lọc Giá tiền */}
+        <div className="bg-white/70 backdrop-blur-xl p-6 rounded-[3rem] shadow-sm flex flex-col md:flex-row items-center border border-white/50 gap-6 italic">
+          <div className="flex items-center gap-3 ml-4 md:w-1/4">
+              <span className="w-2 h-8 bg-pink-500 rounded-full"></span>
+              <p className="text-slate-800 font-black text-sm uppercase tracking-tighter italic">Lọc theo mức giá</p>
+          </div>
+          <div className="flex-1 w-full px-4 flex items-center gap-4">
+            <span className="text-xs font-black text-slate-400">0đ</span>
+            <input 
+              type="range" 
+              min="0" 
+              max="50000000" 
+              step="1000000" 
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(Number(e.target.value))}
+              className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+            />
+            <span className="text-sm font-black text-pink-600 bg-pink-50 px-4 py-2 rounded-xl whitespace-nowrap">
+              Dưới {maxPrice.toLocaleString()}đ
+            </span>
           </div>
         </div>
       </div>

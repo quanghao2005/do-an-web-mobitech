@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useCart } from '../context/CartContext';
 
 const ProductCard = ({ product, initialIsWished = false, onWishlistChange }) => {
   const navigate = useNavigate();
   const [isWished, setIsWished] = useState(initialIsWished); 
+  const { addToCart } = useCart();
 
   // Đồng bộ state khi prop thay đổi (cần thiết nếu component cha load dữ liệu sau)
   React.useEffect(() => {
@@ -39,6 +41,45 @@ const ProductCard = ({ product, initialIsWished = false, onWishlistChange }) => 
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleBuyNow = (e) => {
+    e.stopPropagation(); // Ngăn click lan ra thẻ div ngoài cùng
+    
+    const user = localStorage.getItem("user");
+    if (!user) {
+      alert("⚠️ Bạn cần đăng nhập để thực hiện mua sản phẩm này!");
+      navigate("/login");
+      return;
+    }
+
+    // Nếu sản phẩm có phân loại màu, chọn màu đầu tiên làm mặc định, nếu không thì lấy thông tin cơ bản
+    let colorObj = { colorName: "Mặc định", imageUrl: product.imageUrl };
+    let ramLabel = "";
+    
+    if (product.colorVariants && typeof product.colorVariants === 'string') {
+      try {
+        const variants = JSON.parse(product.colorVariants);
+        if (variants.length > 0) colorObj = variants[0];
+      } catch (err) {}
+    } else if (Array.isArray(product.colorVariants) && product.colorVariants.length > 0) {
+      colorObj = product.colorVariants[0];
+    }
+
+    if (product.ramOptions && typeof product.ramOptions === 'string') {
+      try {
+        const rams = JSON.parse(product.ramOptions);
+        if (rams.length > 0) ramLabel = rams[0].label;
+      } catch (err) {}
+    }
+    
+    addToCart(
+      { ...product, price: product.price, imageUrl: colorObj.imageUrl || product.imageUrl }, 
+      { name: colorObj.colorName, image: colorObj.imageUrl || product.imageUrl, ram: ramLabel }
+    );
+    
+    // Chuyển sang checkout
+    navigate("/checkout");
   };
 
   // 1. Kiểm tra điều kiện giảm giá: oldPrice phải tồn tại và lớn hơn giá hiện tại
@@ -109,7 +150,10 @@ const ProductCard = ({ product, initialIsWished = false, onWishlistChange }) => 
       </div>
 
       {/* NÚT MUA NGAY */}
-      <button className="w-full mt-8 bg-blue-600 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-blue-200 hover:bg-slate-900 transition-all duration-500 italic">
+      <button 
+        onClick={handleBuyNow}
+        className="w-full mt-8 bg-blue-600 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-blue-200 hover:bg-slate-900 transition-all duration-500 italic"
+      >
         Mua ngay
       </button>
     </div>

@@ -41,6 +41,9 @@ public class User {
     @Column(nullable = false)
     private String password;
     
+    @Column(length = 100)
+    private String email;
+    
     // Mặc định là USER
     @Column(columnDefinition = "VARCHAR(20) DEFAULT 'USER'")
     private String role; 

@@ -36,6 +36,30 @@ public class EmailService {
         }
     }
 
+    public void sendOTPEmail(String toEmail, String otp) {
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(toEmail);
+            helper.setSubject("Mã OTP Đăng Nhập / Quên Mật Khẩu");
+
+            String htmlContent = "<div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
+                    + "<h2 style='color: #0056b3;'>Yêu cầu cấp lại mật khẩu</h2>"
+                    + "<p>Xin chào,</p>"
+                    + "<p>Bạn vừa yêu cầu đăng nhập bằng mã OTP. Dưới đây là mã xác nhận của bạn:</p>"
+                    + "<h1 style='color: #d9534f; background: #f9f9f9; padding: 10px; text-align: center; border-radius: 5px; font-size: 32px; letter-spacing: 5px;'>" + otp + "</h1>"
+                    + "<p>Mã này có hiệu lực trong vòng <strong>5 phút</strong>.</p>"
+                    + "<p>Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>"
+                    + "</div>";
+
+            helper.setText(htmlContent, true); 
+            javaMailSender.send(message);
+        } catch (MessagingException e) {
+            System.err.println("Lỗi khi gửi email OTP: " + e.getMessage());
+        }
+    }
+
     private String buildHtmlContent(String customerName, Order order) {
         StringBuilder html = new StringBuilder();
         

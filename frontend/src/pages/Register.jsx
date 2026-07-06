@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import SearchableSelect from "../components/SearchableSelect";
 
 export default function Register() {
   const navigate = useNavigate();
 
   // 1. State quản lý Form chính
   const [form, setForm] = useState({
-    fullName: '', phone: '', address: '', username: '', password: '', role: 'USER'
+    fullName: '', phone: '', address: '', username: '', password: '', role: 'USER', email: ''
   });
   
   // 2. State quản lý Avatar
@@ -15,18 +16,15 @@ export default function Register() {
 
   // 3. State quản lý API địa chỉ
   const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
 
   const [selectedProvince, setSelectedProvince] = useState("");
-  const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedWard, setSelectedWard] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
 
-  // Tải danh sách Tỉnh/Thành
   useEffect(() => {
-    axios.get("https://provinces.open-api.vn/api/p/")
-      .then((res) => setProvinces(res.data))
+    axios.get("/addresses.json")
+      .then((res) => setProvinces(res.data.provinces))
       .catch(err => console.error("Lỗi tải tỉnh thành:", err));
   }, []);
 
@@ -44,25 +42,29 @@ export default function Register() {
     }
   };
 
-  // Xử lý chọn địa chỉ 3 cấp
   const handleProvinceChange = (e) => {
     const pCode = e.target.value;
     setSelectedProvince(pCode);
-    setSelectedDistrict(""); setSelectedWard("");
-    setDistricts([]); setWards([]);
+    setSelectedWard("");
+    setWards([]);
     if (pCode) {
-      axios.get(`https://provinces.open-api.vn/api/p/${pCode}?depth=2`)
-        .then((res) => setDistricts(res.data.districts));
-    }
-  };
-
-  const handleDistrictChange = (e) => {
-    const dCode = e.target.value;
-    setSelectedDistrict(dCode);
-    setSelectedWard(""); setWards([]);
-    if (dCode) {
-      axios.get(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`)
-        .then((res) => setWards(res.data.wards));
+      if (pCode === "72") {
+        axios.get("/addresses.json").then((res) => {
+          setWards(res.data.wards);
+        });
+      } else {
+        axios.get(`https://provinces.open-api.vn/api/p/${pCode}?depth=3`).then((res) => {
+          const allWards = [];
+          if (res.data.districts) {
+            res.data.districts.forEach(d => {
+              if (d.wards) {
+                allWards.push(...d.wards);
+              }
+            });
+          }
+          setWards(allWards);
+        }).catch(() => setWards([]));
+      }
     }
   };
 
@@ -78,9 +80,8 @@ export default function Register() {
     }
 
     const pName = provinces.find(p => p.code == selectedProvince)?.name || "";
-    const dName = districts.find(d => d.code == selectedDistrict)?.name || "";
     const wName = wards.find(w => w.code == selectedWard)?.name || "";
-    const fullAddress = `${detailAddress}, ${wName}, ${dName}, ${pName}`;
+    const fullAddress = `${detailAddress}, ${wName}, ${pName}`;
 
     const dataToSend = { 
         ...form, 
@@ -124,6 +125,7 @@ export default function Register() {
 
         <form onSubmit={handleRegister} className="space-y-4 italic">
           <input className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold outline-none italic" placeholder="Họ và Tên" onChange={e => setForm({...form, fullName: e.target.value})} required />
+          <input type="email" className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold outline-none italic" placeholder="Email" onChange={e => setForm({...form, email: e.target.value})} required />
           
           <div className="grid grid-cols-2 gap-4 italic">
             <input 
@@ -143,19 +145,20 @@ export default function Register() {
 
           <div className="space-y-3 italic">
             <p className="text-[10px] font-black text-gray-400 uppercase ml-2 tracking-widest italic">Địa chỉ nhận hàng</p>
-            <div className="grid grid-cols-3 gap-2 italic">
-              <select className="bg-gray-50 rounded-xl py-3 px-3 text-[10px] font-black uppercase outline-none cursor-pointer italic" value={selectedProvince} onChange={handleProvinceChange} required>
-                <option value="">Tỉnh/Thành</option>
-                {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
-              </select>
-              <select className="bg-gray-50 rounded-xl py-3 px-3 text-[10px] font-black uppercase outline-none disabled:opacity-50 italic" value={selectedDistrict} onChange={handleDistrictChange} disabled={!selectedProvince} required>
-                <option value="">Quận/Huyện</option>
-                {districts.map(d => <option key={d.code} value={d.code}>{d.name}</option>)}
-              </select>
-              <select className="bg-gray-50 rounded-xl py-3 px-3 text-[10px] font-black uppercase outline-none disabled:opacity-50 italic" value={selectedWard} onChange={e => setSelectedWard(e.target.value)} disabled={!selectedDistrict} required>
-                <option value="">Phường/Xã</option>
-                {wards.map(w => <option key={w.code} value={w.code}>{w.name}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-2 italic z-10 relative">
+              <SearchableSelect 
+                options={provinces} 
+                value={selectedProvince} 
+                onChange={(code) => handleProvinceChange({ target: { value: code } })} 
+                placeholder="-- Chọn tỉnh / TP --" 
+              />
+              <SearchableSelect 
+                options={wards} 
+                value={selectedWard} 
+                onChange={(code) => setSelectedWard(code)} 
+                placeholder="-- Chọn phường / xã --" 
+                disabled={!selectedProvince} 
+              />
             </div>
             <input className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold outline-none italic" placeholder="Số nhà, tên đường..." value={detailAddress} onChange={e => setDetailAddress(e.target.value)} required />
           </div>

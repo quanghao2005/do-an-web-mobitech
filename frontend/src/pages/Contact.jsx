@@ -24,10 +24,12 @@ export default function Contact() {
   useEffect(() => {
     fetchMessages();
     const interval = setInterval(fetchMessages, 3000); 
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); };
   }, [userId]);
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSend = async (e) => {
     e.preventDefault();

@@ -8,6 +8,9 @@ export default function AdminOrder() {
 
   useEffect(() => {
     fetchOrders();
+    // Tự động tải lại danh sách đơn hàng mỗi 5 giây (Real-time giả lập)
+    const interval = setInterval(fetchOrders, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchOrders = async () => {
@@ -17,10 +20,8 @@ export default function AdminOrder() {
     // Kiểm tra xem res.data có đúng là một mảng (Array) không trước khi sort
     const orders = Array.isArray(res.data) ? res.data : [];
     
-    const sortedData = orders.sort((a, b) => {
-        // Logic sort của bạn giữ nguyên
-        return new Date(b.createdAt) - new Date(a.createdAt); 
-    });
+    // Sắp xếp theo ID giảm dần (đơn mới nhất lên đầu)
+    const sortedData = orders.sort((a, b) => b.id - a.id);
     
     setOrders(sortedData);
 } catch (error) {

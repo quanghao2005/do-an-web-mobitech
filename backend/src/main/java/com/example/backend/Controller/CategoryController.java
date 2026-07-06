@@ -42,6 +42,7 @@ public class CategoryController {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục với id: " + id));
         category.setName(categoryDetails.getName());
+        category.setBrand(categoryDetails.getBrand());
         return categoryRepository.save(category);
     }
 

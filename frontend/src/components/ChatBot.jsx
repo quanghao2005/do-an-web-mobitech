@@ -26,8 +26,12 @@ export default function ChatBot() {
     setInput("");
 
     try {
+      // Build conversation history (last 4 messages) to give AI context (e.g. 'các sản phẩm đó')
+      const historyStr = messages.slice(-4).map(m => (m.role === 'user' ? 'Khách: ' : 'MobiTech: ') + m.text).join('\n');
+      
       const response = await axios.post("http://localhost:8080/api/chat/ask", {
         message: input,
+        history: historyStr
       });
       setMessages((prev) => [...prev, { role: "ai", text: response.data.response }]);
     } catch (error) {

@@ -44,14 +44,27 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         try {
-            String msg = authService.resetPassword(
+            String msg = authService.generateAndSendOTP(
                 request.get("username"), 
-                request.get("phone"), 
-                request.get("newPassword")
+                request.get("email")
             );
             return ResponseEntity.ok(Map.of("message", msg));
         } catch (Exception e) {
             return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
+        try {
+            Map<String, Object> result = authService.verifyOTPAndResetPassword(
+                request.get("username"), 
+                request.get("otp"),
+                request.get("newPassword")
+            );
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
         }
     }
 }

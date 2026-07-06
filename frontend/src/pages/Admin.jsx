@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 // Import các Component con
 import AdminDashboard from "./AdminDashboard"; 
@@ -22,9 +23,29 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const adminName = localStorage.getItem("username") || "Quản trị viên";
   const token = localStorage.getItem("token");
+  const [pendingOrders, setPendingOrders] = useState(0);
 
   useEffect(() => {
-    if (!token) navigate("/login");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    
+    // Hàm lấy số lượng đơn hàng chờ duyệt
+    const fetchPendingOrders = async () => {
+      try {
+        const res = await axios.get("http://localhost:8080/api/orders");
+        const orders = Array.isArray(res.data) ? res.data : [];
+        const pendingCount = orders.filter(o => o.status === 'PENDING').length;
+        setPendingOrders(pendingCount);
+      } catch (err) {
+        console.error("Lỗi lấy đơn hàng (Sidebar):", err);
+      }
+    };
+
+    fetchPendingOrders();
+    const intervalId = setInterval(fetchPendingOrders, 5000); // Lặp mỗi 5 giây
+    return () => clearInterval(intervalId);
   }, [token, navigate]);
 
   useEffect(() => {
@@ -84,8 +105,17 @@ export default function Admin() {
           <button onClick={() => setActiveTab("dashboard")} className={menuClass("dashboard")}>
             <span className="text-lg">📊</span> Tổng quan
           </button>
-          <button onClick={() => setActiveTab("order")} className={menuClass("order")}>
-            <span className="text-lg">📦</span> Đơn hàng
+          <button onClick={() => setActiveTab("order")} className={menuClass("order") + " relative"}>
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <span className="text-lg">📦</span> Đơn hàng
+              </div>
+              {pendingOrders > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-red-500/50 animate-pulse">
+                  {pendingOrders} MỚI
+                </span>
+              )}
+            </div>
           </button>
 
           <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] my-6 ml-2 italic">Quản lý kho & nội dung</p>

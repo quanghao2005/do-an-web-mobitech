@@ -1,10 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import { useCart } from "../context/CartContext";
 
 export default function Navbar() {
   const [showProfile, setShowProfile] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [allProducts, setAllProducts] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef(null);
   
   const { cartItems } = useCart();
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -14,6 +18,28 @@ export default function Navbar() {
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
+
+  // Fetch all products for search
+  useEffect(() => {
+    axios.get("http://localhost:8080/api/products/active")
+      .then(res => setAllProducts(res.data))
+      .catch(err => console.log("Lỗi tải sản phẩm search", err));
+  }, []);
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const searchResults = allProducts
+    .filter(p => searchTerm && p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .slice(0, 5);
 
   // 1. State quản lý thông tin hiển thị
  const [formData, setFormData] = useState({
@@ -43,6 +69,7 @@ export default function Navbar() {
   const handleSearch = (e) => {
     if (e.key === "Enter" && searchTerm.trim() !== "") {
       navigate(`/?search=${encodeURIComponent(searchTerm.trim())}`);
+      setShowSuggestions(false);
       setSearchTerm("");
     }
   };
@@ -63,16 +90,61 @@ export default function Navbar() {
 
       {/* THANH TÌM KIẾM */}
       <div className="flex-1 max-w-md mx-10">
-        <div className="relative group">
+        <div className="relative group" ref={searchRef}>
           <input 
             type="text" 
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} 
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setShowSuggestions(true);
+            }} 
+            onFocus={() => setShowSuggestions(true)}
             onKeyDown={handleSearch}
             placeholder="Tìm tên điện thoại, hãng..." 
             className="w-full bg-slate-100 border-2 border-transparent rounded-2xl py-2.5 px-5 pl-12 text-sm focus:bg-white focus:border-blue-500 transition-all outline-none font-bold italic"
           />
           <span className="absolute left-4 top-3 text-slate-400">🔍</span>
+
+          {/* DROPDOWN KẾT QUẢ TÌM KIẾM */}
+          {showSuggestions && searchTerm && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50">
+              {searchResults.length > 0 ? (
+                <div className="max-h-[300px] overflow-y-auto">
+                  {searchResults.map((product) => (
+                    <div 
+                      key={product.id}
+                      onClick={() => {
+                        navigate(`/product/${product.id}`);
+                        setShowSuggestions(false);
+                        setSearchTerm("");
+                      }}
+                      className="flex items-center gap-4 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
+                    >
+                      <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded-xl shadow-sm" />
+                      <div className="flex-1">
+                        <h4 className="text-xs font-black text-slate-800 uppercase italic truncate">{product.name}</h4>
+                        <p className="text-blue-600 font-black text-[10px] italic">{product.price?.toLocaleString()}đ</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div 
+                    onClick={() => {
+                      navigate(`/?search=${encodeURIComponent(searchTerm.trim())}`);
+                      setShowSuggestions(false);
+                      setSearchTerm("");
+                    }}
+                    className="p-3 text-center bg-slate-50 hover:bg-blue-50 text-blue-600 font-black text-[10px] uppercase cursor-pointer italic transition-colors"
+                  >
+                    Xem tất cả kết quả
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 text-center text-slate-400 text-xs font-bold italic">
+                  Không tìm thấy sản phẩm "{searchTerm}"
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

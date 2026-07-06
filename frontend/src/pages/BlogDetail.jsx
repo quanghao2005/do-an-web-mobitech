@@ -1,21 +1,46 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 
 export default function BlogDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [savedCodes, setSavedCodes] = useState([]);
+  const [promotions, setPromotions] = useState([]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     axios.get(`http://localhost:8080/api/posts/${id}`)
       .then(res => setPost(res.data))
       .catch(err => console.error(err));
+      
+    axios.get("http://localhost:8080/api/promotions")
+      .then(res => setPromotions(res.data))
+      .catch(err => console.error(err));
     
     // Tải danh sách mã đã săn
     setSavedCodes(JSON.parse(localStorage.getItem('savedVouchers') || '[]'));
   }, [id]);
+
+  // Kiểm tra nếu bài viết có chứa mã giảm giá bị HẾT HẠN
+  useEffect(() => {
+    if (post && post.content && promotions.length > 0) {
+      const regex = /\[VOUCHER:\s*([A-Za-z0-9]+)\]/g;
+      let match;
+      while ((match = regex.exec(post.content)) !== null) {
+        const code = match[1];
+        const promo = promotions.find(p => p.code === code);
+        if (promo) {
+          if (new Date(promo.endDate) < new Date() || promo.status === 0 || promo.usedCount >= promo.usageLimit) {
+            alert("Rất tiếc! Bài viết này đã bị ẩn do chương trình khuyến mãi đã kết thúc hoặc hết lượt sử dụng.");
+            navigate('/blog');
+            break;
+          }
+        }
+      }
+    }
+  }, [post, promotions, navigate]);
 
   if (!post) {
     return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Đang tải bài viết...</div>;
