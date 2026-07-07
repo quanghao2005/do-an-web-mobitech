@@ -87,34 +87,35 @@ public class ChatController {
             // --- BỘ LỌC GIÁ TIỀN, TỪ KHÓA & SẮP XẾP BẰNG JAVA ---
             boolean filtered = false;
             try {
-                java.util.regex.Pattern pDuoi = java.util.regex.Pattern.compile("dưới (\\d+)\\s*(tr|triệu)", java.util.regex.Pattern.CASE_INSENSITIVE);
-                java.util.regex.Matcher mDuoi = pDuoi.matcher(queryLower);
-                if (mDuoi.find()) {
-                    long maxPrice = Long.parseLong(mDuoi.group(1)) * 1000000;
+                // Xử lý khoảng giá linh hoạt: "từ 20-30tr", "20 đến 30 triệu", "20 - 30tr"
+                java.util.regex.Pattern pTuDen = java.util.regex.Pattern.compile("(?:từ\\s*)?(\\d+)\\s*(?:đến|-)\\s*(\\d+)\\s*(tr|triệu|t)", java.util.regex.Pattern.CASE_INSENSITIVE);
+                java.util.regex.Matcher mTuDen = pTuDen.matcher(queryLower);
+                if (mTuDen.find()) {
+                    long minPrice = Long.parseLong(mTuDen.group(1)) * 1000000;
+                    long maxPrice = Long.parseLong(mTuDen.group(2)) * 1000000;
                     relevantProducts = relevantProducts.stream()
-                        .filter(p -> p.getPrice() != null && p.getPrice() < maxPrice)
+                        .filter(p -> p.getPrice() != null && p.getPrice() >= minPrice && p.getPrice() <= maxPrice)
                         .collect(Collectors.toList());
                     filtered = true;
                 }
 
                 if (!filtered) {
-                    java.util.regex.Pattern pTuDen = java.util.regex.Pattern.compile("từ (\\d+)\\s*(đến|-)\\s*(\\d+)\\s*(tr|triệu)", java.util.regex.Pattern.CASE_INSENSITIVE);
-                    java.util.regex.Matcher mTuDen = pTuDen.matcher(queryLower);
-                    if (mTuDen.find()) {
-                        long minPrice = Long.parseLong(mTuDen.group(1)) * 1000000;
-                        long maxPrice = Long.parseLong(mTuDen.group(3)) * 1000000;
+                    java.util.regex.Pattern pDuoi = java.util.regex.Pattern.compile("(dưới|rẻ hơn|nhỏ hơn)\\s*(\\d+)\\s*(tr|triệu|t)", java.util.regex.Pattern.CASE_INSENSITIVE);
+                    java.util.regex.Matcher mDuoi = pDuoi.matcher(queryLower);
+                    if (mDuoi.find()) {
+                        long maxPrice = Long.parseLong(mDuoi.group(2)) * 1000000;
                         relevantProducts = relevantProducts.stream()
-                            .filter(p -> p.getPrice() != null && p.getPrice() >= minPrice && p.getPrice() <= maxPrice)
+                            .filter(p -> p.getPrice() != null && p.getPrice() < maxPrice)
                             .collect(Collectors.toList());
                         filtered = true;
                     }
                 }
 
                 if (!filtered) {
-                    java.util.regex.Pattern pKhoang = java.util.regex.Pattern.compile("khoảng (\\d+)\\s*(tr|triệu|t)", java.util.regex.Pattern.CASE_INSENSITIVE);
+                    java.util.regex.Pattern pKhoang = java.util.regex.Pattern.compile("(khoảng|tầm|tới|mức|giá)\\s*(\\d+)\\s*(tr|triệu|t)", java.util.regex.Pattern.CASE_INSENSITIVE);
                     java.util.regex.Matcher mKhoang = pKhoang.matcher(queryLower);
                     if (mKhoang.find()) {
-                        long targetPrice = Long.parseLong(mKhoang.group(1)) * 1000000;
+                        long targetPrice = Long.parseLong(mKhoang.group(2)) * 1000000;
                         long minPrice = targetPrice - 4000000; // +- 4 triệu
                         long maxPrice = targetPrice + 4000000;
                         relevantProducts = relevantProducts.stream()
@@ -126,10 +127,10 @@ public class ChatController {
                 }
 
                 if (!filtered) {
-                    java.util.regex.Pattern pTren = java.util.regex.Pattern.compile("trên (\\d+)\\s*(tr|triệu)", java.util.regex.Pattern.CASE_INSENSITIVE);
+                    java.util.regex.Pattern pTren = java.util.regex.Pattern.compile("(trên|hơn|mắc hơn|cao hơn)\\s*(\\d+)\\s*(tr|triệu|t)", java.util.regex.Pattern.CASE_INSENSITIVE);
                     java.util.regex.Matcher mTren = pTren.matcher(queryLower);
                     if (mTren.find()) {
-                        long minPrice = Long.parseLong(mTren.group(1)) * 1000000;
+                        long minPrice = Long.parseLong(mTren.group(2)) * 1000000;
                         relevantProducts = relevantProducts.stream()
                             .filter(p -> p.getPrice() != null && p.getPrice() > minPrice)
                             .collect(Collectors.toList());
@@ -191,7 +192,7 @@ public class ChatController {
         // --------------------------------------------------------------------------------------
 
         // 3. Xây dựng Context dữ liệu (Đổi sang định dạng DỌC để AI nhỏ không bị lú/hallucinate)
-        String context = "THÔNG BÁO: HỆ THỐNG HIỆN ĐANG TÌM THẤY CHÍNH XÁC " + relevantProducts.size() + " SẢN PHẨM KHỚP YÊU CẦU.\n\n" +
+        String context = "THÔNG BÁO TỪ HỆ THỐNG: CÓ " + relevantProducts.size() + " SẢN PHẨM KHỚP VỚI YÊU CẦU.\n\n" +
                 relevantProducts.stream()
                 .map(p -> {
                     String saleNote = "";
@@ -204,22 +205,22 @@ public class ChatController {
                 })
                 .collect(Collectors.joining("\n-------------------\n"));
 
-        // 4. Prompt điều hướng AI (Mềm dẻo, nhiệt tình và có LỊCH SỬ CHAT)
+        // 4. Prompt điều hướng AI chuẩn hóa cho model nhỏ (Qwen 1.5B)
         String fullPrompt = 
-            "Bạn là trợ lý AI bán hàng siêu thông minh, nhiệt tình và khéo léo của MobiTech.\n\n" +
-            "THÔNG TIN CHUNG VỀ MOBITECH ĐỂ BẠN TƯ VẤN:\n" +
-            "- Mua hàng: Khách có thể click vào ảnh máy để xem chi tiết, thêm vào giỏ hàng và thanh toán trực tuyến.\n" +
-            "- Khuyến mãi: Luôn có mã giảm giá (voucher) hiển thị ở trang Thanh toán.\n" +
-            "- Bảo hành: Cam kết hàng chính hãng, bảo hành 12 tháng, lỗi 1 đổi 1 trong 30 ngày.\n\n" +
+            "System: Bạn là nhân viên bán hàng điện thoại nhiệt tình của cửa hàng MobiTech. Hãy dùng thông tin dưới đây để trả lời khách.\n\n" +
+            "### THÔNG TIN CỬA HÀNG:\n" +
+            "- Mua hàng: Click vào ảnh sản phẩm để xem chi tiết, thêm giỏ hàng.\n" +
+            "- Bảo hành: Cam kết hàng chính hãng 100%, bảo hành 12 tháng, lỗi 1 đổi 1 trong 30 ngày.\n\n" +
             historyContext +
-            "DỮ LIỆU SẢN PHẨM ĐANG CÓ (LƯU Ý: CHỈ ĐƯỢC PHÉP CHỌN SẢN PHẨM TỪ DANH SÁCH NÀY):\n" + context + "\n\n" +
-            "QUY TẮC SỐNG CÒN:\n" +
-            "1. CHUẨN XÁC DỮ LIỆU: KHI TRẢ LỜI, BẠN BẮT BUỘC CHỈ ĐƯỢC CHỌN SẢN PHẨM CÓ TRONG MỤC 'DỮ LIỆU SẢN PHẨM ĐANG CÓ' Ở TRÊN. TUYỆT ĐỐI KHÔNG lấy các sản phẩm đắt tiền trong 'LỊCH SỬ CHAT' để trả lời cho câu hỏi mới.\n" +
-            "2. GIAO TIẾP TỰ NHIÊN: Nếu khách hỏi 'shop có bao nhiêu sản phẩm', hãy trả lời chính xác con số được cung cấp ở phần THÔNG BÁO. Không được tự ý thêm số 0.\n" +
-            "3. BẮT BUỘC HÌNH ẢNH: Khi giới thiệu máy, PHẢI copy nguyên xi đoạn [PRODUCT_IMAGE:...] dán sát ngay cạnh tên máy.\n" +
-            "4. KHÔNG BỊA ĐẶT GIÁ: Copy đúng 100% Giá bán và Khuyến mãi. Nếu danh sách dữ liệu trống, hãy xin lỗi khách.\n" +
-            "5. Không dùng dấu sao **, hãy dùng chữ bình thường, mỗi máy xuống dòng rõ ràng.\n\n" +
-            "Câu hỏi hiện tại của khách: " + userMessage;
+            "### DANH SÁCH SẢN PHẨM BẠN ĐƯỢC PHÉP TƯ VẤN (Tuyệt đối không tự bịa ra máy khác):\n" + 
+            context + "\n\n" +
+            "### QUY TẮC CẦN TUÂN THỦ NGHIÊM NGẶT:\n" +
+            "1. Chỉ giới thiệu các sản phẩm có trong mục DANH SÁCH SẢN PHẨM bên trên. Nếu danh sách trống, hãy nói: 'Dạ xin lỗi, hiện MobiTech không có sản phẩm nào phù hợp với yêu cầu này ạ.'\n" +
+            "2. Khi giới thiệu một sản phẩm, PHẢI copy y nguyên chuỗi [PRODUCT_IMAGE:...] dán vào cạnh tên máy để hiển thị ảnh.\n" +
+            "3. Giữ câu trả lời ngắn gọn, thân thiện, dễ đọc.\n" +
+            "4. KHÔNG dùng dấu sao (*) để in đậm. Mỗi sản phẩm xuống dòng một lần.\n\n" +
+            "User: " + userMessage + "\n" +
+            "Assistant: ";
 
         // 5. Gọi Ollama API (Local Qwen2.5)
         String ollamaUrl = "http://localhost:11434/api/generate";
