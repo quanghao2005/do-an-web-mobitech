@@ -76,7 +76,9 @@ export default function Navbar() {
 
   const handleLogout = () => {
     if (window.confirm("Bạn muốn đăng xuất khỏi hệ thống?")) {
-      localStorage.clear();
+      // Chỉ xóa các thông tin đăng nhập, giữ lại dữ liệu giỏ hàng
+      const keysToRemove = ['token', 'role', 'userId', 'username', 'fullName', 'avatar', 'phone', 'address', 'user'];
+      keysToRemove.forEach(key => localStorage.removeItem(key));
       window.location.href = "/";
     }
   };

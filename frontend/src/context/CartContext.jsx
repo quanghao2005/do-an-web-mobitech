@@ -4,12 +4,50 @@ const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem("cart");
-    return savedCart ? JSON.parse(savedCart) : [];
+    const userId = localStorage.getItem("userId");
+    const userCartKey = userId ? `cart_${userId}` : "cart";
+    const guestCartKey = "cart";
+    
+    let currentCart = [];
+    
+    if (userId) {
+      const savedUserCart = localStorage.getItem(userCartKey);
+      const userItems = savedUserCart ? JSON.parse(savedUserCart) : [];
+      
+      const savedGuestCart = localStorage.getItem(guestCartKey);
+      const guestItems = savedGuestCart ? JSON.parse(savedGuestCart) : [];
+      
+      if (guestItems.length > 0) {
+        // Hợp nhất giỏ hàng khách vào giỏ hàng của user
+        const mergedMap = new Map();
+        [...userItems, ...guestItems].forEach(item => {
+           const key = `${item.id}-${item.selectedColorName}`;
+           if (mergedMap.has(key)) {
+              mergedMap.get(key).quantity += item.quantity;
+           } else {
+              mergedMap.set(key, { ...item });
+           }
+        });
+        currentCart = Array.from(mergedMap.values());
+        
+        // Xóa giỏ hàng khách vì đã hợp nhất thành công
+        localStorage.removeItem(guestCartKey);
+      } else {
+        currentCart = userItems;
+      }
+    } else {
+      // Khách vãng lai
+      const savedGuestCart = localStorage.getItem(guestCartKey);
+      currentCart = savedGuestCart ? JSON.parse(savedGuestCart) : [];
+    }
+    
+    return currentCart;
   });
 
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
+    const userId = localStorage.getItem("userId");
+    const cartKey = userId ? `cart_${userId}` : "cart";
+    localStorage.setItem(cartKey, JSON.stringify(cartItems));
   }, [cartItems]);
 
   /**
