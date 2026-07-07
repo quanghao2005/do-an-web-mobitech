@@ -98,8 +98,15 @@ export const CartProvider = ({ children }) => {
     setCartItems([]);
   };
 
+  // Hàm xóa nhiều sản phẩm (đã chọn) sau khi thanh toán
+  const removeMultipleFromCart = (identifiers) => {
+    setCartItems(prev => prev.filter(item => 
+      !identifiers.includes(`${item.id}-${item.selectedColorName}`)
+    ));
+  };
+
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, removeMultipleFromCart }}>
       {children}
     </CartContext.Provider>
   );

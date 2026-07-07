@@ -7,7 +7,29 @@ export default function Cart() {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
   const navigate = useNavigate();
 
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // State quản lý sản phẩm được chọn
+  const [selectedItems, setSelectedItems] = useState(() => 
+    cartItems.map(item => `${item.id}-${item.selectedColorName}`)
+  );
+
+  // Cập nhật lại danh sách chọn nếu giỏ hàng thay đổi (xóa sp)
+  useEffect(() => {
+    setSelectedItems(prev => {
+      const currentIds = cartItems.map(item => `${item.id}-${item.selectedColorName}`);
+      return prev.filter(id => currentIds.includes(id));
+    });
+  }, [cartItems]);
+
+  const selectedCartItems = cartItems.filter(item => selectedItems.includes(`${item.id}-${item.selectedColorName}`));
+  const totalPrice = selectedCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedItems(cartItems.map(item => `${item.id}-${item.selectedColorName}`));
+    } else {
+      setSelectedItems([]);
+    }
+  };
 
   // --- 1. STATE QUẢN LÝ VOUCHER ---
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -70,9 +92,28 @@ export default function Cart() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Danh sách sản phẩm */}
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item, index) => (
-                <div key={`${item.id}-${item.selectedColorName}-${index}`} className="bg-white p-6 rounded-[2rem] flex items-center gap-6 shadow-sm border border-white hover:shadow-md transition-shadow">
-                  
+              <div className="flex items-center gap-3 mb-4 px-4">
+                <input 
+                  type="checkbox" 
+                  className="w-5 h-5 accent-blue-600 cursor-pointer"
+                  checked={cartItems.length > 0 && selectedItems.length === cartItems.length}
+                  onChange={handleSelectAll}
+                />
+                <span className="font-bold text-slate-600 uppercase text-sm">Chọn tất cả ({cartItems.length})</span>
+              </div>
+              {cartItems.map((item, index) => {
+                const idStr = `${item.id}-${item.selectedColorName}`;
+                return (
+                <div key={`${idStr}-${index}`} className="bg-white p-6 rounded-[2rem] flex items-center gap-6 shadow-sm border border-white hover:shadow-md transition-shadow">
+                  <input 
+                    type="checkbox" 
+                    className="w-6 h-6 accent-blue-600 cursor-pointer shrink-0"
+                    checked={selectedItems.includes(idStr)}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedItems([...selectedItems, idStr]);
+                      else setSelectedItems(selectedItems.filter(id => id !== idStr));
+                    }}
+                  />
                   <div className="relative group">
                     <img 
                       src={item.selectedColorImage || item.imageUrl} 
@@ -115,7 +156,8 @@ export default function Cart() {
                     <span className="text-xl font-bold">✕</span>
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Cột Tổng tiền & Thanh toán */}
@@ -155,7 +197,7 @@ export default function Cart() {
                 {/* --- 4. CẬP NHẬT TỔNG TIỀN --- */}
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between text-slate-500 font-medium">
-                    <span>Tạm tính ({cartItems.length} SP):</span>
+                    <span>Tạm tính ({selectedCartItems.length} SP):</span>
                     <span className="font-bold text-slate-800">{totalPrice.toLocaleString()}đ</span>
                   </div>
                   
@@ -183,13 +225,19 @@ export default function Cart() {
                 </div>
 
                 <button 
-                  onClick={() => navigate("/checkout", { 
+                  onClick={() => {
+                    if (selectedItems.length === 0) {
+                      alert("Vui lòng chọn ít nhất 1 sản phẩm để thanh toán!");
+                      return;
+                    }
+                    navigate("/checkout", { 
                     // Truyền dữ liệu Voucher sang trang Checkout
                     state: { 
                       promoCode: appliedPromo?.code, 
-                      discountAmount: discountAmount 
+                      discountAmount: discountAmount,
+                      selectedItems: selectedItems
                     } 
-                  })}
+                  })}}
                   className="w-full bg-slate-900 text-white py-6 rounded-3xl font-black hover:bg-blue-600 transition-all active:scale-95 shadow-2xl shadow-blue-100 uppercase tracking-widest text-sm"
                 >
                   TIẾN HÀNH THANH TOÁN

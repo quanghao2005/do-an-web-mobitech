@@ -6,13 +6,18 @@ import axios from "axios";
 import SearchableSelect from '../components/SearchableSelect';
 
 export default function Checkout() {
-  const { cartItems, clearCart } = useCart();
+  const { cartItems: allCartItems, clearCart, removeMultipleFromCart } = useCart();
   const navigate = useNavigate();
   
   // LẤY THÔNG TIN VOUCHER TỪ TRANG GIỎ HÀNG CHUYỂN SANG
   const location = useLocation();
   const promoCode = location.state?.promoCode || null;
   const discountAmount = location.state?.discountAmount || 0;
+  const selectedIdentifiers = location.state?.selectedItems || [];
+
+  const cartItems = selectedIdentifiers.length > 0 
+    ? allCartItems.filter(item => selectedIdentifiers.includes(`${item.id}-${item.selectedColorName}`))
+    : allCartItems;
 
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [form, setForm] = useState({
@@ -174,8 +179,11 @@ export default function Checkout() {
       await axios.post("http://localhost:8080/api/orders", orderData);
       alert("🎉 Đặt hàng thành công!");
       
-      if (clearCart) clearCart();
-      localStorage.removeItem("cart");
+      if (selectedIdentifiers.length > 0 && removeMultipleFromCart) {
+        removeMultipleFromCart(selectedIdentifiers);
+      } else {
+        if (clearCart) clearCart();
+      }
       window.dispatchEvent(new Event("cartUpdated"));
       
       navigate("/order-history");
