@@ -96,7 +96,8 @@ export default function Register() {
       })
       .catch((err) => {
         console.error(err);
-        alert("Lỗi đăng ký! Tài khoản có thể đã tồn tại hoặc dữ liệu không hợp lệ.");
+        const errorMsg = err.response?.data?.message || "Lỗi đăng ký! Tài khoản có thể đã tồn tại hoặc dữ liệu không hợp lệ.";
+        alert("⚠️ " + errorMsg);
       });
   };
 

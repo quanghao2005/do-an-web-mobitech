@@ -42,6 +42,13 @@ public class AuthService {
 
     // --- HÀM ĐĂNG KÝ ---
     public User register(User user) {
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new RuntimeException("Tên đăng nhập đã tồn tại! Vui lòng chọn tên khác.");
+        }
+        if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
+            throw new RuntimeException("Email đã được đăng ký! Vui lòng sử dụng email khác.");
+        }
+
         // 1. Mã hóa mật khẩu trước khi lưu vào DB
         user.setPassword(encoder.encode(user.getPassword()));
         

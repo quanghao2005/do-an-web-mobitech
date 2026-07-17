@@ -15,6 +15,7 @@ export default function Home() {
   const [brands, setBrands] = useState([]);
   const [banners, setBanners] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("all");
+  const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(50000000);
   const [loading, setLoading] = useState(true);
 
@@ -32,7 +33,12 @@ export default function Home() {
           axios.get("http://localhost:8080/api/banners").catch(() => ({ data: [] }))
         ]);
 
-        setProducts(resProd.data);
+        const sortedProducts = resProd.data.sort((a, b) => b.id - a.id);
+        const productsWithNewFlag = sortedProducts.map((p, idx) => ({
+           ...p,
+           isNew: idx < 4
+        }));
+        setProducts(productsWithNewFlag);
         setBrands(resBrand.data);
         
         if (resBanner.data.length > 0) {
@@ -65,7 +71,7 @@ export default function Home() {
                          (p.brand && p.brand.id.toString() === selectedBrand) || 
                          (!p.brand && p.category && targetBrand && p.category.name.toUpperCase() === targetBrand.name.toUpperCase());
                          
-    const matchesPrice = p.price <= maxPrice;
+    const matchesPrice = p.price >= minPrice && p.price <= maxPrice;
     
     return matchesSearch && matchesBrand && matchesPrice;
   });
@@ -161,20 +167,48 @@ export default function Home() {
               <span className="w-2 h-8 bg-pink-500 rounded-full"></span>
               <p className="text-slate-800 font-black text-sm uppercase tracking-tighter italic">Lọc theo mức giá</p>
           </div>
-          <div className="flex-1 w-full px-4 flex items-center gap-4">
-            <span className="text-xs font-black text-slate-400">0đ</span>
-            <input 
-              type="range" 
-              min="0" 
-              max="50000000" 
-              step="1000000" 
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
-            />
-            <span className="text-sm font-black text-pink-600 bg-pink-50 px-4 py-2 rounded-xl whitespace-nowrap">
-              Dưới {maxPrice.toLocaleString()}đ
-            </span>
+          <div className="flex-1 w-full px-4 flex flex-col gap-4">
+            
+            {/* Thanh trượt Min Price */}
+            <div className="flex items-center gap-4">
+              <span className="text-xs font-black text-slate-400 w-12">TỪ</span>
+              <input 
+                type="range" 
+                min="0" 
+                max="50000000" 
+                step="1000000" 
+                value={minPrice}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val <= maxPrice) setMinPrice(val);
+                }}
+                className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              />
+              <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl whitespace-nowrap min-w-[140px] text-center uppercase tracking-widest">
+                {minPrice.toLocaleString()}đ
+              </span>
+            </div>
+
+            {/* Thanh trượt Max Price */}
+            <div className="flex items-center gap-4">
+              <span className="text-xs font-black text-slate-400 w-12">ĐẾN</span>
+              <input 
+                type="range" 
+                min="0" 
+                max="50000000" 
+                step="1000000" 
+                value={maxPrice}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val >= minPrice) setMaxPrice(val);
+                }}
+                className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+              />
+              <span className="text-[11px] font-black text-pink-600 bg-pink-50 px-4 py-2 rounded-xl whitespace-nowrap min-w-[140px] text-center uppercase tracking-widest">
+                {maxPrice.toLocaleString()}đ
+              </span>
+            </div>
+
           </div>
         </div>
       </div>

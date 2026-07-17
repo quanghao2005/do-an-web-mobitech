@@ -78,8 +78,8 @@ const ProductCard = ({ product, initialIsWished = false, onWishlistChange }) => 
       { name: colorObj.colorName, image: colorObj.imageUrl || product.imageUrl, ram: ramLabel }
     );
     
-    // Chuyển sang checkout
-    navigate("/checkout");
+    // Chuyển sang cart
+    navigate("/cart");
   };
 
   // 1. Kiểm tra điều kiện giảm giá: oldPrice phải tồn tại và lớn hơn giá hiện tại
@@ -99,6 +99,13 @@ const ProductCard = ({ product, initialIsWished = false, onWishlistChange }) => 
       {isSale && (
         <div className="absolute top-6 left-6 z-10 bg-red-500 text-white text-[10px] font-black px-4 py-2 rounded-2xl shadow-xl shadow-red-200 uppercase italic">
           Giảm {discountPercent}%
+        </div>
+      )}
+
+      {/* TAG SẢN PHẨM MỚI */}
+      {product.isNew && (
+        <div className={`absolute left-6 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black px-4 py-2 rounded-2xl shadow-xl shadow-blue-200 uppercase italic animate-bounce ${isSale ? 'top-16' : 'top-6'}`}>
+          Mới ra mắt ✨
         </div>
       )}
 

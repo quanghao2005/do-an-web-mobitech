@@ -7,6 +7,8 @@ export default function AdminProduct() {
   const [brands, setBrands] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // 1. FORM STATE: Đã thêm stock: ''
   const [form, setForm] = useState({
@@ -31,7 +33,7 @@ export default function AdminProduct() {
         axios.get('http://localhost:8080/api/categories'),
         axios.get('http://localhost:8080/api/brands')
       ]);
-      setProducts(resProd.data);
+      setProducts(resProd.data.sort((a, b) => b.id - a.id));
       setCategories(resCate.data);
       setBrands(resBrand.data);
     } catch (err) { 
@@ -176,7 +178,18 @@ export default function AdminProduct() {
       try {
         await axios.delete(`http://localhost:8080/api/products/${id}`);
         loadData();
-      } catch (err) { alert("Lỗi xóa!"); }
+      } catch (err) { 
+        const errorMsg = err.response?.data || "";
+        if (errorMsg.includes("order_detail")) {
+            alert("Không thể xóa! Sản phẩm này đã phát sinh đơn hàng trong quá khứ. Việc xóa sẽ làm hỏng lịch sử doanh thu. 👉 Gợi ý: Hãy bấm đổi trạng thái sang '⚪ Ẩn'.");
+        } else if (errorMsg.includes("import") || errorMsg.includes("stock")) {
+            alert("Không thể xóa! Sản phẩm này đã có lịch sử nhập kho. 👉 Gợi ý: Hãy bấm đổi trạng thái sang '⚪ Ẩn'.");
+        } else if (errorMsg.includes("wishlist")) {
+            alert("Không thể xóa! Sản phẩm này đang nằm trong mục yêu thích của khách hàng. 👉 Gợi ý: Hãy bấm đổi trạng thái sang '⚪ Ẩn'.");
+        } else {
+            alert("Lỗi xóa: " + errorMsg); 
+        }
+      }
     }
   };
 
@@ -195,7 +208,17 @@ export default function AdminProduct() {
 
       {/* BẢNG DANH SÁCH */}
       <div className="bg-white rounded-[4rem] shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full text-left border-collapse italic text-sm">
+        
+        {/* LOGIC PHÂN TRANG */}
+        {(() => {
+          const totalPages = Math.ceil(products.length / itemsPerPage);
+          const indexOfLastItem = currentPage * itemsPerPage;
+          const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+          const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
+
+          return (
+            <>
+              <table className="w-full text-left border-collapse italic text-sm">
           <thead className="bg-slate-50/50 border-b border-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">
             <tr>
               <th className="p-8">Sản phẩm</th>
@@ -206,7 +229,7 @@ export default function AdminProduct() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {products.map(p => (
+            {currentProducts.map(p => (
               <tr key={p.id} className="hover:bg-slate-50/30 transition italic">
                 <td className="p-8 flex items-center gap-6 italic font-bold uppercase text-slate-800 tracking-tighter">
                   <img src={p.imageUrl} className="w-16 h-16 object-contain" alt="" /> {p.name}
@@ -235,6 +258,44 @@ export default function AdminProduct() {
             ))}
           </tbody>
         </table>
+        
+        {/* ĐIỀU HƯỚNG PHÂN TRANG */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 p-6 border-t border-slate-50">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-sm"
+            >
+              &lt;
+            </button>
+            
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-8 h-8 flex items-center justify-center rounded-xl font-bold text-xs transition-all ${
+                  currentPage === i + 1 
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-200"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-sm"
+            >
+              &gt;
+            </button>
+          </div>
+        )}
+            </>
+          );
+        })()}
       </div>
 
       {/* MODAL CẤU HÌNH */}

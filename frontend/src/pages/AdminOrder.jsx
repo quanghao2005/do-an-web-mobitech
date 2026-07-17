@@ -5,6 +5,8 @@ export default function AdminOrder() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null); // Để xem chi tiết đơn
   const [filter, setFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchOrders();
@@ -58,6 +60,12 @@ export default function AdminOrder() {
   // Lọc đơn hàng theo Tab
   const filteredOrders = orders.filter(o => filter === "ALL" || o.status === filter);
 
+  // Tính toán phân trang
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <div className="animate-fadeIn p-4">
       <style>{`
@@ -78,7 +86,7 @@ export default function AdminOrder() {
             {["ALL", "PENDING", "SHIPPING", "DELIVERED", "CANCELLED"].map((f) => (
                 <button 
                     key={f}
-                    onClick={() => setFilter(f)}
+                    onClick={() => { setFilter(f); setCurrentPage(1); }}
                     className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${
                         filter === f ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'
                     }`}
@@ -101,7 +109,7 @@ export default function AdminOrder() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {filteredOrders.map((order) => {
+            {currentOrders.map((order) => {
               const isLocked = order.status === 'DELIVERED' || order.status === 'CANCELLED';
 
               return (
@@ -166,6 +174,41 @@ export default function AdminOrder() {
             <div className="p-20 text-center">
                 <p className="text-slate-300 font-black text-sm uppercase tracking-[0.3em]">Không có đơn hàng nào trong mục này</p>
             </div>
+        )}
+
+        {/* Điều hướng phân trang */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 p-6 border-t border-slate-50">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-sm"
+            >
+              &lt;
+            </button>
+            
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-8 h-8 flex items-center justify-center rounded-xl font-bold text-xs transition-all ${
+                  currentPage === i + 1 
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-200"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-sm"
+            >
+              &gt;
+            </button>
+          </div>
         )}
       </div>
 

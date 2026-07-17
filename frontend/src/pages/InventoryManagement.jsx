@@ -12,6 +12,9 @@ export default function InventoryManagement() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [addQuantity, setAddQuantity] = useState("");
   const [importPrice, setImportPrice] = useState("");
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchInventory();
@@ -24,7 +27,7 @@ export default function InventoryManagement() {
         axios.get("http://localhost:8080/api/products"),
         axios.get("http://localhost:8080/api/imports")
       ]);
-      setProducts(resProducts.data);
+      setProducts(resProducts.data.sort((a, b) => b.id - a.id));
       // Sắp xếp lịch sử nhập kho mới nhất lên đầu
       setImportHistory(resImports.data.sort((a, b) => new Date(b.importDate) - new Date(a.importDate)));
     } catch (err) {
@@ -115,8 +118,17 @@ export default function InventoryManagement() {
 
       {/* BẢNG DỮ LIỆU KHO */}
       <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-50">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        
+        {(() => {
+          const totalPages = Math.ceil(products.length / itemsPerPage);
+          const indexOfLastItem = currentPage * itemsPerPage;
+          const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+          const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
+
+          return (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b-2 border-slate-100">
                 <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Sản phẩm</th>
@@ -127,7 +139,7 @@ export default function InventoryManagement() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => {
+              {currentProducts.map((product) => {
                 const stock = product.stock || 0;
                 let statusBadge = <span className="bg-green-100 text-green-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">Còn hàng</span>;
                 if (stock === 0) statusBadge = <span className="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest animate-pulse">Hết hàng</span>;
@@ -155,9 +167,47 @@ export default function InventoryManagement() {
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+
+          {/* ĐIỀU HƯỚNG PHÂN TRANG */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 p-6 border-t border-slate-50 mt-4">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-sm"
+              >
+                &lt;
+              </button>
+              
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-xl font-bold text-xs transition-all ${
+                    currentPage === i + 1 
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+                      : "bg-slate-50 text-slate-500 hover:bg-slate-200"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-sm"
+              >
+                &gt;
+              </button>
+            </div>
+          )}
+        </>
+      );
+    })()}
       </div>
 
       {/* LỊCH SỬ NHẬP KHO (MODAL) */}

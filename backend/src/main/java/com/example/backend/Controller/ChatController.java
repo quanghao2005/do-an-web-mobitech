@@ -62,6 +62,15 @@ public class ChatController {
             return Collections.singletonMap("response", "Dạ, MobiTech có thể giúp gì cho bạn không ạ?");
         }
 
+        // --- DEBUG ENDPOINT (Tạm thời để kiểm tra) ---
+        boolean isDebug = false;
+        if (userMessage.startsWith("DEBUG:")) {
+            isDebug = true;
+            userMessage = userMessage.substring(6).trim();
+            request.put("message", userMessage);
+        }
+        final boolean finalIsDebug = isDebug;
+        
         String queryLower = userMessage.toLowerCase();
 
         // 1. Lấy danh sách sản phẩm đang bán
@@ -190,35 +199,48 @@ public class ChatController {
             }
         }
         // --------------------------------------------------------------------------------------
+        
+        if (finalIsDebug) {
+            return Collections.singletonMap("response", 
+                "DEBUG INFO:\n" +
+                "- All Products: " + allProducts.size() + "\n" +
+                "- Relevant Products Size: " + relevantProducts.size() + "\n" +
+                "- Product IDs: " + relevantProducts.stream().map(p -> p.getId().toString()).collect(Collectors.joining(", "))
+            );
+        }
 
         // 3. Xây dựng Context dữ liệu (Đổi sang định dạng DỌC để AI nhỏ không bị lú/hallucinate)
-        String context = "THÔNG BÁO TỪ HỆ THỐNG: CÓ " + relevantProducts.size() + " SẢN PHẨM KHỚP VỚI YÊU CẦU.\n\n" +
+        String context = "";
+        if (relevantProducts.isEmpty()) {
+            context = "THÔNG BÁO TỪ HỆ THỐNG: KHÔNG TÌM THẤY SẢN PHẨM NÀO KHỚP YÊU CẦU. BẠN HÃY LỊCH SỰ XIN LỖI KHÁCH HÀNG VÀ HỎI XEM HỌ CÓ MUỐN TÌM SẢN PHẨM KHÁC KHÔNG.";
+        } else {
+            context = "THÔNG BÁO TỪ HỆ THỐNG: TÌM THẤY " + relevantProducts.size() + " SẢN PHẨM.\n\n" +
                 relevantProducts.stream()
                 .map(p -> {
                     String saleNote = "";
                     if (p.getOldPrice() != null && p.getOldPrice() > p.getPrice()) {
                         double percent = ((p.getOldPrice() - p.getPrice()) / p.getOldPrice()) * 100;
-                        saleNote = String.format("\n- Khuyến mãi: ĐANG SALE %,.0f%% (Giá gốc: %,.0f VNĐ)", percent, p.getOldPrice());
+                        saleNote = String.format(" (ĐANG SALE %,.0f%%)", percent);
                     }
-                    return String.format("SẢN PHẨM:\n- Tên máy: %s [PRODUCT_IMAGE:%d]\n- Giá bán: %,.0f VNĐ%s\n- Cấu hình: Chip %s, RAM %s, Pin %s\n", 
+                    return String.format("- Tên: %s [PRODUCT_IMAGE:%d]\n  Giá: %,.0f VNĐ%s\n  Cấu hình: %s, RAM %s, Pin %s\n", 
                         p.getName(), p.getId(), p.getPrice(), saleNote, p.getCpu(), p.getRam(), p.getBattery());
                 })
-                .collect(Collectors.joining("\n-------------------\n"));
+                .collect(Collectors.joining("\n"));
+        }
 
         // 4. Prompt điều hướng AI chuẩn hóa cho model nhỏ (Qwen 1.5B)
         String fullPrompt = 
-            "System: Bạn là nhân viên bán hàng điện thoại nhiệt tình của cửa hàng MobiTech. Hãy dùng thông tin dưới đây để trả lời khách.\n\n" +
+            "System: Bạn là nhân viên bán hàng điện thoại nhiệt tình của MobiTech. Nhiệm vụ của bạn là dựa vào THÔNG TIN HỆ THỐNG bên dưới để tư vấn cho khách.\n\n" +
             "### THÔNG TIN CỬA HÀNG:\n" +
-            "- Mua hàng: Click vào ảnh sản phẩm để xem chi tiết, thêm giỏ hàng.\n" +
-            "- Bảo hành: Cam kết hàng chính hãng 100%, bảo hành 12 tháng, lỗi 1 đổi 1 trong 30 ngày.\n\n" +
+            "- Mua hàng: Click vào ảnh sản phẩm để xem chi tiết.\n" +
+            "- Bảo hành: Chính hãng 100%, bảo hành 12 tháng.\n\n" +
             historyContext +
-            "### DANH SÁCH SẢN PHẨM BẠN ĐƯỢC PHÉP TƯ VẤN (Tuyệt đối không tự bịa ra máy khác):\n" + 
+            "### THÔNG TIN TỪ HỆ THỐNG (BẮT BUỘC DỰA VÀO ĐÂY ĐỂ TRẢ LỜI):\n" + 
             context + "\n\n" +
-            "### QUY TẮC CẦN TUÂN THỦ NGHIÊM NGẶT:\n" +
-            "1. Chỉ giới thiệu các sản phẩm có trong mục DANH SÁCH SẢN PHẨM bên trên. Nếu danh sách trống, hãy nói: 'Dạ xin lỗi, hiện MobiTech không có sản phẩm nào phù hợp với yêu cầu này ạ.'\n" +
-            "2. Khi giới thiệu một sản phẩm, PHẢI copy y nguyên chuỗi [PRODUCT_IMAGE:...] dán vào cạnh tên máy để hiển thị ảnh.\n" +
-            "3. Giữ câu trả lời ngắn gọn, thân thiện, dễ đọc.\n" +
-            "4. KHÔNG dùng dấu sao (*) để in đậm. Mỗi sản phẩm xuống dòng một lần.\n\n" +
+            "### QUY TẮC CẦN TUÂN THỦ:\n" +
+            "1. Tuyệt đối không tự bịa ra máy khác ngoài danh sách hệ thống cung cấp.\n" +
+            "2. Khi giới thiệu sản phẩm, BẮT BUỘC copy y nguyên đoạn mã [PRODUCT_IMAGE:...] dán sát tên máy.\n" +
+            "3. Trả lời thân thiện, ngắn gọn. Không dùng dấu sao (*) để in đậm.\n\n" +
             "User: " + userMessage + "\n" +
             "Assistant: ";
 
